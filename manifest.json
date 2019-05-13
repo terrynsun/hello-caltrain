@@ -1,0 +1,9 @@
+{
+  "short_name": "Caltrain",
+  "name": "Hello Caltrain",
+  "icons": [
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/"
+}

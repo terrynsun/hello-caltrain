@@ -1,14 +1,13 @@
-var ROUTES = {};
-
-var cacheName = 'hello-caltrain';
-var filesToCache = [
-  '/',
-];
-
 var GTFS_URL = './CT-GTFS.zip';
 var ROUTES_URL = 'gtfs/routes.txt';
 var STOPS_URL = 'gtfs/stops.txt';
 var STOP_TIMES_URL = 'gtfs/stop_times.txt';
+
+var cacheName = 'hello-caltrain';
+var filesToCache = [
+  '/',
+  GTFS_URL, ROUTES_URL, STOPS_URL, STOP_TIMES_URL
+];
 
 function parseCSV(text) {
   var lines = text.split('\n');
@@ -110,13 +109,12 @@ async function main() {
 
 }
 
-self.addEventListener('install', function(e) {
+self.addEventListener('install', (e) => {
   console.log('[ServiceWorker] Install');
   e.waitUntil(
-    caches.open(cacheName).then(function(cache) {
+    caches.open(cacheName).then((cache) => {
       console.log('[ServiceWorker] Caching app shell');
-      main();
-      //return cache.addAll(filesToCache);
+      return cache.addAll(filesToCache);
     })
   );
 });
@@ -127,7 +125,7 @@ self.addEventListener('activate',  event => {
 
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request, {ignoreSearch:true}).then(response => {
+    caches.match(event.request, { ignoreSearch:true }).then(response => {
       return response || fetch(event.request);
     })
   );
