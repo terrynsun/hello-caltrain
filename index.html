@@ -8,5 +8,13 @@
   </head>
   <body>
     <h1>Hello Caltrain</h1>
+    <script>
+      if('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/worker.js')
+          .then(function() {
+                console.log('Service Worker Registered');
+          });
+      }
+    </script>
   </body>
 </html>
