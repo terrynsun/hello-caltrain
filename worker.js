@@ -54,6 +54,7 @@ function parseStops(data) {
 
 function parseTimes(data) {
   // trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,timepoint,start_service_area_id,end_service_area_id,start_service_area_radius,end_service_area_radius,continuous_pickup,continuous_drop_off,pickup_area_id,drop_off_area_id,pickup_service_area_radius,drop_off_service_area_radius
+
   var trips = {};
 
   for (var i = 0; i < data.length; i++) {
@@ -73,33 +74,40 @@ function parseTimes(data) {
   return trips;
 }
 
-function main() {
-  fetch(ROUTES_URL)
-    .then(function(response) {
-      response.text().then(function(text) {
+async function loadData() {
+  var routes = await fetch(ROUTES_URL)
+    .then(response => {
+      return response.text().then(text => {
+        console.log('Fetched routes.csv');
         var data = parseCSV(text);
-        var routes = parseRoutes(data);
-        console.log('Parsed routes.csv');
+        return parseRoutes(data);
       });
   });
 
-  fetch(STOPS_URL)
-    .then(function(response) {
-      response.text().then(function(text) {
+  var stops = await fetch(STOPS_URL)
+    .then(response => {
+      return response.text().then(text => {
+        console.log('Fetched stops.csv');
         var data = parseCSV(text);
-        var stops = parseStops(data);
-        console.log('Parsed stops.csv');
+        return parseStops(data);
       });
   });
 
-  fetch(STOP_TIMES_URL)
-    .then(function(response) {
-      response.text().then(function(text) {
+  var times = await fetch(STOP_TIMES_URL)
+    .then(response => {
+      return response.text().then(text => {
+        console.log('Fetched times.csv');
         var data = parseCSV(text);
-        var times = parseTimes(data);
-        console.log('Parsed stop_times.csv');
+        return parseTimes(data);
       });
   });
+
+  return [routes, stops, times];
+}
+
+async function main() {
+  var [routes, stops, times] = await loadData();
+
 }
 
 self.addEventListener('install', function(e) {
