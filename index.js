@@ -2,6 +2,43 @@ var ROUTES_URL = 'gtfs/routes.txt';
 var STOPS_URL = 'gtfs/stops.txt';
 var STOP_TIMES_URL = 'gtfs/stop_times.txt';
 
+/*
+ * a, b are strings of the form "hh:mm" in 24-hour format.
+ */
+function sortTime(a, b) {
+  if (a == b) {
+    return 0;
+  }
+
+  var [hrA, minA] = a.split(':').map(x => Number.parseInt(x));
+  var [hrB, minB] = b.split(':').map(x => Number.parseInt(x));
+
+  if (hrA > hrB || (hrA == hrB && minA > minB)) {
+    return 1;
+  } else {
+    return -1;
+  }
+}
+
+/*
+ * Time between a and b, subtracting a from b.
+ * a, b are strings of the form "hh:mm" in 24-hour format.
+ */
+function subTimes(a, b) {
+  var [hrA, minA] = a.split(':').map(x => Number.parseInt(x));
+  var [hrB, minB] = b.split(':').map(x => Number.parseInt(x));
+
+  var hrDiff = hrB - hrA;
+  var minDiff = minB - minA;
+  if (minDiff > 0) {
+    return hrDiff * 60 + minDiff;
+  } else {
+    hrDiff -= 1;
+    minDiff += 60;
+    return hrDiff * 60 + minDiff;
+  }
+}
+
 function parseCSV(text) {
   var lines = text.split('\n');
 
@@ -66,8 +103,10 @@ function parseTimes(data) {
       trips[tripId] = [];
     }
 
+    // Time is given as "hh:mm:ss", trim the ":ss"
     // var arrival = line[1];
     var departure = line[2];
+    departure = departure.substring(0, departure.length - 3);
     var stop = line[3];
 
     trips[tripId].push([stop, departure]);
@@ -107,12 +146,178 @@ async function loadData() {
   return [routes, stationIds, stationNames, times];
 }
 
+function drawFavorites(favs) {
+  var div = document.querySelector('#favorites');
+  for (const f of favs) {
+    var b = document.createElement('button');
+    b.textContent = f;
+    div.appendChild(b);
+  }
+}
+
+// Given list of all trips, and stations that we're interested in,
+// Return all trips which visit at least two stations.
+
+// stationIds: stations to include
+// trips: all trips
+// northbound: 1 = northbound, 0 = southbound
+function getActiveTrips(stationIds, trips, northbound) {
+  var activeTrips = [];
+
+  // Get the trips which stop at two or more of the active train stations
+  for (const id in trips) {
+    // Ignore shuttles and _holiday trains for now.
+    if (isNaN(Number(id))) {
+      continue;
+    // Ignore trains going the other way
+    } else if (Number(id) % 2 !== northbound) {
+      continue;
+    } else {
+      var numActiveStops = 0;
+
+      var stops = [];
+
+      for (const stop of trips[id]) {
+        var station = stop[0];
+        var time = stop[1];
+
+        var idx = stationIds.indexOf(station);
+        if (idx !== -1) {
+          numActiveStops++;
+          stops[idx] = time;
+        }
+      }
+
+      if (numActiveStops < 2) {
+        continue;
+      }
+
+      // Compute length of time
+      var tripLength = subTimes(
+        stops.find((x) => x !== undefined),
+        stops[stops.length - 1]
+      );
+
+      // Fill missing gaps if not all stations are visited by a train
+      for (var i = 0; i < stationIds.length; i++) {
+        if (stops[i] == undefined) {
+          stops[i] = '-';
+        }
+      }
+
+      // Prepend trip ID
+      stops.unshift(`#${id}`);
+
+      // Append trip length
+      stops.push(`${tripLength} min`);
+
+      activeTrips.push(stops);
+    }
+  }
+
+  // Sort by first station the train visits.
+  activeTrips.sort((a, b) => {
+    return sortTime(
+      a.slice(1).find((x) => x !== '-'),
+      b.slice(1).find((x) => x !== '-')
+    );
+  });
+
+  return activeTrips;
+}
+
+function drawTrainTable(active, trips, stationNames, northbound) {
+  var table = document.querySelector('#trains-table');
+
+  var stationIds = [];
+  // Convert station names into IDs
+  for (const s of active) {
+    var ids = stationNames[s];
+    if (northbound === 1) {
+      stationIds.push(ids[0]);
+    } else {
+      stationIds.push(ids[1]);
+    }
+  }
+
+  // Draw header
+  var thead = document.createElement('thead');
+  var tr = document.createElement('tr');
+  thead.appendChild(tr);
+
+  var th = document.createElement('th');
+  th.textContent = 'Train';
+  tr.appendChild(th);
+
+  for (const station of active) {
+    th = document.createElement('th');
+    th.textContent = station;
+    tr.appendChild(th);
+  }
+
+  th = document.createElement('th');
+  th.textContent = 'Length';
+  tr.appendChild(th);
+
+  table.appendChild(thead);
+
+  // Draw body
+  var tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+
+  const activeTrips = getActiveTrips(stationIds, trips, northbound);
+
+  for (const trip of activeTrips) {
+    var row = document.createElement('tr');
+
+    for (const v of trip) {
+      var td = document.createElement('td');
+      td.textContent = v;
+      row.appendChild(td);
+    }
+
+    tbody.appendChild(row);
+  }
+}
+
+function drawStationList(stations) {
+  var div = document.querySelector('#all-stations');
+  for (const s in stations) {
+    var row = document.createElement('div');
+    row.setAttribute('class', 'row');
+    div.appendChild(row);
+
+    var b = document.createElement('button');
+    b.textContent = '+';
+    row.appendChild(b);
+
+    var bstar = document.createElement('button');
+    bstar.textContent = '★';
+    row.appendChild(bstar);
+
+    var t = document.createTextNode(` ${s}`);
+    row.appendChild(t);
+  }
+}
+
 async function main() {
   var [routes, stationIds, stationNames, trips] = await loadData();
 
-  for (const name in stationNames) {
-    console.log(name);
+  // TODO: actually load user preferences
+
+  // Always stored in North-South order.
+  var favorites = ['San Francisco', 'San Mateo', 'Palo Alto', 'Mountain View'];
+  var active = ['Palo Alto', 'Hillsdale', 'San Mateo'];
+
+  var northbound = 0;
+
+  if (northbound === 0) {
+    active.reverse();
   }
+
+  drawFavorites(favorites);
+  drawTrainTable(active, trips, stationNames, northbound);
+  drawStationList(stationNames);
 }
 
 if ('serviceWorker' in navigator) {
