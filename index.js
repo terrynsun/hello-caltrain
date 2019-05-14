@@ -2,6 +2,15 @@ var ROUTES_URL = 'gtfs/routes.txt';
 var STOPS_URL = 'gtfs/stops.txt';
 var STOP_TIMES_URL = 'gtfs/stop_times.txt';
 
+class State {
+  constructor() {
+    // Station lists always stored in North-South order.
+    this.actives = [];
+    this.favorites = [];
+    this.northbound = 0;
+  }
+}
+
 /*
  * a, b are strings of the form "hh:mm" in 24-hour format.
  */
@@ -304,19 +313,19 @@ async function main() {
   var [routes, stationIds, stationNames, trips] = await loadData();
 
   // TODO: actually load user preferences
+  var state = new State();
+  state.favorites = ['San Francisco', 'San Mateo', 'Palo Alto', 'Mountain View'];
+  state.actives = ['Palo Alto', 'Hillsdale', 'San Mateo'];
 
-  // Always stored in North-South order.
-  var favorites = ['San Francisco', 'San Mateo', 'Palo Alto', 'Mountain View'];
-  var active = ['Palo Alto', 'Hillsdale', 'San Mateo'];
+  // Make a copy so we can reverse it.. probably hacky.
+  var active = Array.from(state.actives);
 
-  var northbound = 0;
-
-  if (northbound === 0) {
+  if (state.northbound === 0) {
     active.reverse();
   }
 
-  drawFavorites(favorites);
-  drawTrainTable(active, trips, stationNames, northbound);
+  drawFavorites(state.favorites);
+  drawTrainTable(active, trips, stationNames, state.northbound);
   drawStationList(stationNames);
 }
 
