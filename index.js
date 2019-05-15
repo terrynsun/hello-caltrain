@@ -32,7 +32,6 @@ function toggleCity(list, station, stationNames) {
       return stationNames[a][0] - stationNames[b][0];
     });
   }
-  console.log(list);
 }
 
 function clearNode(node) {
@@ -218,6 +217,25 @@ function drawFavorites(state, data) {
     });
     div.appendChild(b);
   }
+
+  // Create buttons for other active stations so we can remove them
+  div = document.querySelector('#other-actives');
+  clearNode(div);
+
+  for (const s of actives) {
+    if (favs.indexOf(s) == -1) {
+      const b = document.createElement('button');
+      toggleButtonPrimary(b);
+      b.textContent = s;
+      b.addEventListener('click', (e) => { //jshint ignore:line
+        toggleCity(actives, s, stationNames);
+        drawTrainTable(state, data);
+        drawFavorites(state, data);
+      });
+      div.appendChild(b);
+    }
+  }
+
 }
 
 // Given list of all trips, and stations that we're interested in,
