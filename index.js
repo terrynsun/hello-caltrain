@@ -22,6 +22,36 @@ class State {
   }
 }
 
+function toggleCity(list, station, stationNames) {
+  var idx = list.indexOf(station);
+  if (idx > -1) {
+    list.splice(idx, 1);
+  } else {
+    list.push(station);
+    list.sort((a, b) => {
+      return stationNames[a][0] - stationNames[b][0];
+    });
+  }
+  console.log(list);
+}
+
+function clearNode(node) {
+  // node is a dom element
+  while (node.hasChildNodes()) {
+    node.removeChild(node.lastChild);
+  }
+}
+
+function toggleButtonPrimary(b) {
+  // b should be the actual dom button element
+  var cls = b.getAttribute('class');
+  if (cls == 'button-primary') {
+    b.removeAttribute('class');
+  } else {
+    b.setAttribute('class', 'button-primary');
+  }
+}
+
 /*
  * a, b are strings of the form "hh:mm" in 24-hour format.
  */
@@ -166,29 +196,6 @@ async function loadData() {
   return [routes, stationIds, stationNames, times];
 }
 
-function toggleButtonPrimary(b) {
-  // b should be the actual dom button element
-  var cls = b.getAttribute('class');
-  if (cls == 'button-primary') {
-    b.removeAttribute('class');
-  } else {
-    b.setAttribute('class', 'button-primary');
-  }
-}
-
-function toggleCity(list, station, stationNames) {
-  var idx = list.indexOf(station);
-  if (idx > -1) {
-    list.splice(idx, 1);
-  } else {
-    list.push(station);
-    list.sort((a, b) => {
-      return stationNames[a][0] - stationNames[b][0];
-    });
-  }
-  console.log(list);
-}
-
 function drawFavorites(state, data) {
   var favs = state.favorites;
   var actives = state.actives;
@@ -196,6 +203,8 @@ function drawFavorites(state, data) {
   var stationNames = data.stationNames;
 
   var div = document.querySelector('#favorites');
+  clearNode(div);
+
   for (const f of favs) {
     const b = document.createElement('button');
     if (actives.indexOf(f) > -1) {
@@ -288,10 +297,31 @@ function getActiveTrips(stationIds, trips, northbound) {
   return activeTrips;
 }
 
-function clearNode(node) {
-  // node is a dom element
-  while (node.hasChildNodes()) {
-    node.removeChild(node.lastChild);
+function drawTrainTableButtons(state, data) {
+  var div = document.querySelector('#traintable-buttons');
+
+  clearNode(div);
+
+  // Northbound-southbound
+  var dirButton = document.createElement('button');
+  dirButton.textContent = 'Northbound';
+  dirButton.addEventListener('click', (e) => { // jshint ignore:line
+    if (state.northbound === 0) {
+      state.northbound = 1;
+      dirButton.textContent = 'Northbound';
+    } else {
+      state.northbound = 0;
+      dirButton.textContent = 'Southbound';
+    }
+    drawTrainTable(state, data);
+  });
+  div.appendChild(dirButton);
+
+  // Weekday, Saturday, Sunday buttons can toggle but don't do anything
+  for (const text of ['Weekday', 'Saturday', 'Sunday']) {
+    const b = document.createElement('button');
+    b.textContent = text;
+    div.appendChild(b);
   }
 }
 
@@ -395,6 +425,7 @@ async function main() {
   state.actives = ['San Mateo', 'Hillsdale', 'Palo Alto'];
 
   drawFavorites(state, data);
+  drawTrainTableButtons(state, data);
   drawTrainTable(state, data);
   drawStationList(stationNames);
 }

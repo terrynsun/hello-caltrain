@@ -10,12 +10,14 @@ Caltrain GTFS (General Transit Feed Specification) is downloaded from the
 
 - [ ] Generate buttons for station list at bottom of page, broken up by zone if
   possible
-- [ ] Consider [Barebones](Barebones) intead of Skeleton
-- [ ] Change color scheme so "primary" = "activated" is not blue
+* UI
+  - [ ] Consider [Barebones](Barebones) intead of Skeleton
+  - [ ] Why isn't there any padding around buttons?
+  - [ ] Change color scheme so "primary" = "activated" is not blue
 - Hook up buttons so they do anything
   - [x] Add/remove trains from current timetable
   - [ ] Add/remove trains from favorites
-  - [ ] North vs. southbound toggle
+  - [x] North vs. southbound toggle
 - [ ] Toggle weekday/weekend trains (calendar.txt, calendar_dates.txt)
 - [ ] Filter for only limited/bullet trains?
 - [ ] Figure out holiday trains
