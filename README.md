@@ -13,7 +13,7 @@ Caltrain GTFS (General Transit Feed Specification) is downloaded from the
 - [ ] Consider [Barebones](Barebones) intead of Skeleton
 - [ ] Change color scheme so "primary" = "activated" is not blue
 - Hook up buttons so they do anything
-  - [ ] Add/remove trains from current timetable
+  - [x] Add/remove trains from current timetable
   - [ ] Add/remove trains from favorites
   - [ ] North vs. southbound toggle
 - [ ] Toggle weekday/weekend trains (calendar.txt, calendar_dates.txt)

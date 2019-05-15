@@ -4,7 +4,6 @@ var STOP_TIMES_URL = 'gtfs/stop_times.txt';
 
 var cacheName = 'hello-caltrain';
 var filesToCache = [
-  '/',
   ROUTES_URL, STOPS_URL, STOP_TIMES_URL
 ];
 

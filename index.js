@@ -2,12 +2,23 @@ var ROUTES_URL = 'gtfs/routes.txt';
 var STOPS_URL = 'gtfs/stops.txt';
 var STOP_TIMES_URL = 'gtfs/stop_times.txt';
 
+class Data {
+  constructor(routes, stationIds, stationNames, trips) {
+    this.routes = routes;
+    this.stationIds = stationIds;
+    this.stationNames = stationNames;
+    this.trips = trips;
+  }
+}
+
 class State {
   constructor() {
     // Station lists always stored in North-South order.
     this.actives = [];
     this.favorites = [];
-    this.northbound = 0;
+
+    // 1 = northbound, 0 = southbound
+    this.northbound = 1;
   }
 }
 
@@ -155,11 +166,47 @@ async function loadData() {
   return [routes, stationIds, stationNames, times];
 }
 
-function drawFavorites(favs) {
+function toggleButtonPrimary(b) {
+  // b should be the actual dom button element
+  var cls = b.getAttribute('class');
+  if (cls == 'button-primary') {
+    b.removeAttribute('class');
+  } else {
+    b.setAttribute('class', 'button-primary');
+  }
+}
+
+function toggleCity(list, station, stationNames) {
+  var idx = list.indexOf(station);
+  if (idx > -1) {
+    list.splice(idx, 1);
+  } else {
+    list.push(station);
+    list.sort((a, b) => {
+      return stationNames[a][0] - stationNames[b][0];
+    });
+  }
+  console.log(list);
+}
+
+function drawFavorites(state, data) {
+  var favs = state.favorites;
+  var actives = state.actives;
+
+  var stationNames = data.stationNames;
+
   var div = document.querySelector('#favorites');
   for (const f of favs) {
-    var b = document.createElement('button');
+    const b = document.createElement('button');
+    if (actives.indexOf(f) > -1) {
+      toggleButtonPrimary(b);
+    }
     b.textContent = f;
+    b.addEventListener('click', (e) => { // jshint ignore:line
+      toggleButtonPrimary(b);
+      toggleCity(actives, f, stationNames);
+      drawTrainTable(state, data);
+    });
     div.appendChild(b);
   }
 }
@@ -207,6 +254,12 @@ function getActiveTrips(stationIds, trips, northbound) {
         stops[stops.length - 1]
       );
 
+      // For northbound trips, reverse.
+      if (northbound === 1) {
+        stops.reverse();
+        tripLength = tripLength * -1;
+      }
+
       // Fill missing gaps if not all stations are visited by a train
       for (var i = 0; i < stationIds.length; i++) {
         if (stops[i] == undefined) {
@@ -235,8 +288,23 @@ function getActiveTrips(stationIds, trips, northbound) {
   return activeTrips;
 }
 
-function drawTrainTable(active, trips, stationNames, northbound) {
+function clearNode(node) {
+  // node is a dom element
+  while (node.hasChildNodes()) {
+    node.removeChild(node.lastChild);
+  }
+}
+
+function drawTrainTable(state, data) {
+  var active = state.actives;
+  var northbound = state.northbound;
+  var trips = data.trips;
+  var stationNames = data.stationNames;
+
   var table = document.querySelector('#trains-table');
+
+  // Clear any existing data.
+  clearNode(table);
 
   var stationIds = [];
   // Convert station names into IDs
@@ -258,7 +326,14 @@ function drawTrainTable(active, trips, stationNames, northbound) {
   th.textContent = 'Train';
   tr.appendChild(th);
 
-  for (const station of active) {
+  const len = active.length;
+  for (var i = 0; i < len; i++) {
+    var idx = i;
+    if (northbound === 0) {
+      idx = len - i - 1;
+    }
+
+    const station = active[idx];
     th = document.createElement('th');
     th.textContent = station;
     tr.appendChild(th);
@@ -312,20 +387,15 @@ function drawStationList(stations) {
 async function main() {
   var [routes, stationIds, stationNames, trips] = await loadData();
 
+  const data = new Data(routes, stationIds, stationNames, trips);
+
   // TODO: actually load user preferences
   var state = new State();
   state.favorites = ['San Francisco', 'San Mateo', 'Palo Alto', 'Mountain View'];
-  state.actives = ['Palo Alto', 'Hillsdale', 'San Mateo'];
+  state.actives = ['San Mateo', 'Hillsdale', 'Palo Alto'];
 
-  // Make a copy so we can reverse it.. probably hacky.
-  var active = Array.from(state.actives);
-
-  if (state.northbound === 0) {
-    active.reverse();
-  }
-
-  drawFavorites(state.favorites);
-  drawTrainTable(active, trips, stationNames, state.northbound);
+  drawFavorites(state, data);
+  drawTrainTable(state, data);
   drawStationList(stationNames);
 }
 
