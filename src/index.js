@@ -1,15 +1,5 @@
-var ROUTES_URL = 'gtfs/routes.txt';
-var STOPS_URL = 'gtfs/stops.txt';
-var STOP_TIMES_URL = 'gtfs/stop_times.txt';
-
-class Data {
-  constructor(routes, stationIds, stationNames, trips) {
-    this.routes = routes;
-    this.stationIds = stationIds;
-    this.stationNames = stationNames;
-    this.trips = trips;
-  }
-}
+import * as Time from './time.js';
+import * as Data from './data.js';
 
 class State {
   constructor() {
@@ -41,7 +31,7 @@ function clearNode(node) {
   }
 }
 
-function toggleButtonPrimary(b) {
+function toggleButtonColor(b) {
   // b should be the actual dom button element
   var cls = b.getAttribute('class');
   if (cls == 'button-primary') {
@@ -49,150 +39,6 @@ function toggleButtonPrimary(b) {
   } else {
     b.setAttribute('class', 'button-primary');
   }
-}
-
-/*
- * a, b are strings of the form "hh:mm" in 24-hour format.
- */
-function sortTime(a, b) {
-  if (a == b) {
-    return 0;
-  }
-
-  var [hrA, minA] = a.split(':').map(x => Number.parseInt(x));
-  var [hrB, minB] = b.split(':').map(x => Number.parseInt(x));
-
-  if (hrA > hrB || (hrA == hrB && minA > minB)) {
-    return 1;
-  } else {
-    return -1;
-  }
-}
-
-/*
- * Time between a and b, subtracting a from b.
- * a, b are strings of the form "hh:mm" in 24-hour format.
- */
-function subTimes(a, b) {
-  var [hrA, minA] = a.split(':').map(x => Number.parseInt(x));
-  var [hrB, minB] = b.split(':').map(x => Number.parseInt(x));
-
-  var hrDiff = hrB - hrA;
-  var minDiff = minB - minA;
-  if (minDiff > 0) {
-    return hrDiff * 60 + minDiff;
-  } else {
-    hrDiff -= 1;
-    minDiff += 60;
-    return hrDiff * 60 + minDiff;
-  }
-}
-
-function parseCSV(text) {
-  var lines = text.split('\n');
-
-  var data = [];
-  // Skip first line (csv column names)
-  for (var i = 1; i < lines.length; i++) {
-    var l = lines[i];
-    if (l.length === 0) {
-      // Skip final line
-      continue;
-    }
-    var csv = l.split(',');
-    data.push(csv);
-  }
-
-  return data;
-}
-
-function parseRoutes(data) {
-  // agency_id,route_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order,min_headway_minutes,eligibility_restricted
-  var routes = {};
-  for (var i = 0; i < data.length; i++) {
-    var line = data[i];
-    var id = line[1];
-    var name = line[2];
-    routes[id] = name;
-  }
-  return routes;
-}
-
-function parseStops(data) {
-  // stop_id,stop_code,platform_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,position,direction,wheelchair_boarding
-  var stationIds = {};
-  var stationNames = {};
-
-  for (var i = 0; i < data.length; i++) {
-    var line = data[i];
-    var id = line[0];
-    var fullName = line[3];
-
-    // Remove ".. Caltrain" suffix
-    var name = fullName.substring(0, fullName.indexOf(" Caltrain"));
-    stationIds[id] = name;
-    if (stationNames[name] == undefined) {
-      stationNames[name] = [];
-    }
-    stationNames[name].push(id);
-  }
-
-  return stationIds, stationNames;
-}
-
-function parseTimes(data) {
-  // trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,timepoint,start_service_area_id,end_service_area_id,start_service_area_radius,end_service_area_radius,continuous_pickup,continuous_drop_off,pickup_area_id,drop_off_area_id,pickup_service_area_radius,drop_off_service_area_radius
-
-  var trips = {};
-
-  for (var i = 0; i < data.length; i++) {
-    var line = data[i];
-    var tripId = line[0];
-    if (trips[tripId] === undefined) {
-      trips[tripId] = [];
-    }
-
-    // Time is given as "hh:mm:ss", trim the ":ss"
-    // var arrival = line[1];
-    var departure = line[2];
-    departure = departure.substring(0, departure.length - 3);
-    var stop = line[3];
-
-    trips[tripId].push([stop, departure]);
-  }
-
-  return trips;
-}
-
-async function loadData() {
-  var routes = await fetch(ROUTES_URL)
-    .then(response => {
-      return response.text().then(text => {
-        console.log('Fetched routes.csv');
-        var data = parseCSV(text);
-        return parseRoutes(data);
-      });
-  });
-
-  var stationIds, stationNames = await fetch(STOPS_URL)
-    .then(response => {
-      return response.text().then(text => {
-        console.log('Fetched stops.csv');
-        var data = parseCSV(text);
-        return parseStops(data);
-      });
-  });
-
-  var times = await fetch(STOP_TIMES_URL)
-    .then(response => {
-      return response.text().then(text => {
-        console.log('Fetched times.csv');
-        var data = parseCSV(text);
-        return parseTimes(data);
-      });
-  });
-
-  return [routes, stationIds, stationNames, times];
 }
 
 function drawFavorites(state, data) {
@@ -207,11 +53,11 @@ function drawFavorites(state, data) {
   for (const f of favs) {
     const b = document.createElement('button');
     if (actives.indexOf(f) > -1) {
-      toggleButtonPrimary(b);
+      toggleButtonColor(b);
     }
     b.textContent = f;
     b.addEventListener('click', (e) => { // jshint ignore:line
-      toggleButtonPrimary(b);
+      toggleButtonColor(b);
       toggleCity(actives, f, stationNames);
       drawTrainTable(state, data);
     });
@@ -225,7 +71,7 @@ function drawFavorites(state, data) {
   for (const s of actives) {
     if (favs.indexOf(s) == -1) {
       const b = document.createElement('button');
-      toggleButtonPrimary(b);
+      toggleButtonColor(b);
       b.textContent = s;
       b.addEventListener('click', (e) => { //jshint ignore:line
         toggleCity(actives, s, stationNames);
@@ -276,7 +122,7 @@ function getActiveTrips(stationIds, trips, northbound) {
       }
 
       // Compute length of time
-      var tripLength = subTimes(
+      var tripLength = Time.subTimes(
         stops.find((x) => x !== undefined),
         stops[stops.length - 1]
       );
@@ -306,7 +152,7 @@ function getActiveTrips(stationIds, trips, northbound) {
 
   // Sort by first station the train visits.
   activeTrips.sort((a, b) => {
-    return sortTime(
+    return Time.cmpTimes(
       a.slice(1).find((x) => x !== '-'),
       b.slice(1).find((x) => x !== '-')
     );
@@ -424,11 +270,11 @@ function drawStationList(state, data) {
     const bstar = document.createElement('button');
     bstar.textContent = '★';
     if (state.favorites.indexOf(s) > -1) {
-      toggleButtonPrimary(bstar);
+      toggleButtonColor(bstar);
     }
     bstar.addEventListener('click', (e) => { // jshint ignore:line
       toggleCity(state.favorites, s, stations);
-      toggleButtonPrimary(bstar);
+      toggleButtonColor(bstar);
       drawFavorites(state, data);
     });
     row.appendChild(bstar);
@@ -436,11 +282,11 @@ function drawStationList(state, data) {
     const btoggle = document.createElement('button');
     btoggle.textContent = s;
     if (state.actives.indexOf(s) > -1) {
-      toggleButtonPrimary(btoggle);
+      toggleButtonColor(btoggle);
     }
     btoggle.addEventListener('click', (e) => { // jshint ignore:line
       toggleCity(state.actives, s, stations);
-      toggleButtonPrimary(btoggle);
+      toggleButtonColor(btoggle);
       drawFavorites(state, data);
       drawTrainTable(state, data);
     });
@@ -449,9 +295,7 @@ function drawStationList(state, data) {
 }
 
 async function main() {
-  var [routes, stationIds, stationNames, trips] = await loadData();
-
-  const data = new Data(routes, stationIds, stationNames, trips);
+  const data = await Data.loadData();
 
   // TODO: actually load user preferences
   var state = new State();
