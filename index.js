@@ -412,23 +412,39 @@ function drawTrainTable(state, data) {
   }
 }
 
-function drawStationList(stations) {
+function drawStationList(state, data) {
+  var stations = data.stationNames;
+
   var div = document.querySelector('#all-stations');
   for (const s in stations) {
     var row = document.createElement('div');
     row.setAttribute('class', 'row');
     div.appendChild(row);
 
-    var b = document.createElement('button');
-    b.textContent = '+';
-    row.appendChild(b);
-
-    var bstar = document.createElement('button');
+    const bstar = document.createElement('button');
     bstar.textContent = '★';
+    if (state.favorites.indexOf(s) > -1) {
+      toggleButtonPrimary(bstar);
+    }
+    bstar.addEventListener('click', (e) => { // jshint ignore:line
+      toggleCity(state.favorites, s, stations);
+      toggleButtonPrimary(bstar);
+      drawFavorites(state, data);
+    });
     row.appendChild(bstar);
 
-    var t = document.createTextNode(` ${s}`);
-    row.appendChild(t);
+    const btoggle = document.createElement('button');
+    btoggle.textContent = s;
+    if (state.actives.indexOf(s) > -1) {
+      toggleButtonPrimary(btoggle);
+    }
+    btoggle.addEventListener('click', (e) => { // jshint ignore:line
+      toggleCity(state.actives, s, stations);
+      toggleButtonPrimary(btoggle);
+      drawFavorites(state, data);
+      drawTrainTable(state, data);
+    });
+    row.appendChild(btoggle);
   }
 }
 
@@ -445,7 +461,7 @@ async function main() {
   drawFavorites(state, data);
   drawTrainTableButtons(state, data);
   drawTrainTable(state, data);
-  drawStationList(stationNames);
+  drawStationList(state, data);
 }
 
 if ('serviceWorker' in navigator) {
