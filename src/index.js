@@ -15,7 +15,7 @@ class State {
 }
 
 function toggleCity(list, station, stationNames) {
-  var idx = list.indexOf(station);
+  const idx = list.indexOf(station);
   if (idx > -1) {
     list.splice(idx, 1);
   } else {
@@ -35,7 +35,7 @@ function clearNode(node) {
 
 function toggleButtonColor(b) {
   // b should be the actual dom button element
-  var cls = b.getAttribute('class');
+  const cls = b.getAttribute('class');
   if (cls == 'button-primary') {
     b.removeAttribute('class');
   } else {
@@ -45,7 +45,7 @@ function toggleButtonColor(b) {
 
 function setButtonColor(b, active) {
   // b should be the actual dom button element
-  var cls = b.getAttribute('class');
+  const cls = b.getAttribute('class');
   if (active) {
     b.setAttribute('class', 'button-primary');
   } else {
@@ -54,12 +54,12 @@ function setButtonColor(b, active) {
 }
 
 function drawFavorites(state, data) {
-  var favs = state.favorites;
-  var actives = state.actives;
+  const favs = state.favorites;
+  const actives = state.actives;
 
-  var stationNames = data.stationNames;
+  const stationNames = data.stationNames;
 
-  var div = document.querySelector('#favorites');
+  let div = document.querySelector('#favorites');
   clearNode(div);
 
   for (const f of favs) {
@@ -103,7 +103,7 @@ function drawFavorites(state, data) {
 // trips: all trips
 // northbound: 1 = northbound, 0 = southbound
 function getActiveTrips(stationIds, trips, state) {
-  var activeTrips = [];
+  const activeTrips = [];
 
   // Get the trips which stop at two or more of the active train stations
   for (const [id, t] of Object.entries(trips)) {
@@ -117,15 +117,15 @@ function getActiveTrips(stationIds, trips, state) {
     } else if (!t.service[state.schedule]) {
       continue;
     } else {
-      var numActiveStops = 0;
+      let numActiveStops = 0;
 
-      var stops = [];
+      const stops = [];
 
       for (const stop of t.stops) {
-        var station = stop[0];
-        var time = stop[1];
+        const station = stop[0];
+        const time = stop[1];
 
-        var idx = stationIds.indexOf(station);
+        const idx = stationIds.indexOf(station);
         if (idx !== -1) {
           numActiveStops++;
           stops[idx] = time;
@@ -137,7 +137,7 @@ function getActiveTrips(stationIds, trips, state) {
       }
 
       // Compute length of time
-      var tripLength = Time.subTimes(
+      let tripLength = Time.subTimes(
         stops.find((x) => x !== undefined),
         stops[stops.length - 1]
       );
@@ -149,7 +149,7 @@ function getActiveTrips(stationIds, trips, state) {
       }
 
       // Fill missing gaps if not all stations are visited by a train
-      for (var i = 0; i < stationIds.length; i++) {
+      for (let i = 0; i < stationIds.length; i++) {
         if (stops[i] == undefined) {
           stops[i] = '-';
         }
@@ -177,12 +177,12 @@ function getActiveTrips(stationIds, trips, state) {
 }
 
 function drawTrainTableButtons(state, data) {
-  var div = document.querySelector('#traintable-buttons');
+  const div = document.querySelector('#traintable-buttons');
 
   clearNode(div);
 
   // Northbound-southbound
-  var dirButton = document.createElement('button');
+  const dirButton = document.createElement('button');
   dirButton.textContent = 'Northbound';
   dirButton.addEventListener('click', (e) => { // jshint ignore:line
     if (state.northbound === 0) {
@@ -219,20 +219,20 @@ function drawTrainTableButtons(state, data) {
 }
 
 function drawTrainTable(state, data) {
-  var active = state.actives;
-  var northbound = state.northbound;
-  var trips = data.trips;
-  var stationNames = data.stationNames;
+  const active = state.actives;
+  const northbound = state.northbound;
+  const trips = data.trips;
+  const stationNames = data.stationNames;
 
-  var table = document.querySelector('#trains-table');
+  const table = document.querySelector('#trains-table');
 
   // Clear any existing data.
   clearNode(table);
 
-  var stationIds = [];
+  const stationIds = [];
   // Convert station names into IDs
   for (const s of active) {
-    var ids = stationNames[s];
+    const ids = stationNames[s];
     if (northbound === 1) {
       stationIds.push(ids[0]);
     } else {
@@ -241,17 +241,17 @@ function drawTrainTable(state, data) {
   }
 
   // Draw header
-  var thead = document.createElement('thead');
-  var tr = document.createElement('tr');
+  const thead = document.createElement('thead');
+  const tr = document.createElement('tr');
   thead.appendChild(tr);
 
-  var th = document.createElement('th');
+  let th = document.createElement('th');
   th.textContent = 'Train';
   tr.appendChild(th);
 
   const len = active.length;
-  for (var i = 0; i < len; i++) {
-    var idx = i;
+  for (let i = 0; i < len; i++) {
+    let idx = i;
     if (northbound === 0) {
       idx = len - i - 1;
     }
@@ -269,16 +269,16 @@ function drawTrainTable(state, data) {
   table.appendChild(thead);
 
   // Draw body
-  var tbody = document.createElement('tbody');
+  const tbody = document.createElement('tbody');
   table.appendChild(tbody);
 
   const activeTrips = getActiveTrips(stationIds, trips, state);
 
   for (const trip of activeTrips) {
-    var row = document.createElement('tr');
+    const row = document.createElement('tr');
 
     for (const v of trip) {
-      var td = document.createElement('td');
+      const td = document.createElement('td');
       td.textContent = v;
       row.appendChild(td);
     }
@@ -288,11 +288,11 @@ function drawTrainTable(state, data) {
 }
 
 function drawStationList(state, data) {
-  var stations = data.stationNames;
+  const stations = data.stationNames;
 
-  var div = document.querySelector('#all-stations');
+  const div = document.querySelector('#all-stations');
   for (const s in stations) {
-    var row = document.createElement('div');
+    const row = document.createElement('div');
     row.setAttribute('class', 'row');
     div.appendChild(row);
 
@@ -327,7 +327,7 @@ async function main() {
   const data = await Data.loadData();
 
   // TODO: actually load user preferences
-  var state = new State();
+  const state = new State();
   state.favorites = ['San Francisco', 'San Mateo', 'Palo Alto', 'Mountain View'];
   state.actives = ['San Mateo', 'Hillsdale', 'Palo Alto'];
 
