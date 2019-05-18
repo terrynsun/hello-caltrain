@@ -252,7 +252,7 @@ function drawTrainTable(state, data) {
   const len = active.length;
   for (let i = 0; i < len; i++) {
     let idx = i;
-    if (northbound === 0) {
+    if (northbound === 1) {
       idx = len - i - 1;
     }
 
@@ -329,7 +329,7 @@ async function main() {
   // TODO: actually load user preferences
   const state = new State();
   state.favorites = ['San Francisco', 'San Mateo', 'Palo Alto', 'Mountain View'];
-  state.actives = ['San Mateo', 'Hillsdale', 'Palo Alto'];
+  state.actives = ['San Francisco', 'San Mateo'];
 
   drawFavorites(state, data);
   drawTrainTableButtons(state, data);
