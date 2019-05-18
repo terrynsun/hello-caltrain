@@ -1,41 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
 
-    <link rel="manifest" href="/manifest.json">
+    <link rel='manifest' href='/manifest.json'>
     <title>Hello Caltrain</title>
 
     <!-- Styling -->
-    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="skeleton/css/normalize.css">
-    <link rel="stylesheet" href="skeleton/css/skeleton.css">
+    <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
+    <link rel='stylesheet' href='skeleton/css/normalize.css'>
+    <link rel='stylesheet' href='skeleton/css/skeleton.css'>
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="column" style="margin-top: 5%">
-          <h1>Hello Caltrain</h1>
-          <h5> Favorite Stations </h5>
-          <div id='favorites'> </div>
-          <div id='other-actives'> </div>
-          <div id='trains'>
-            <h5> Trains </h5>
-            <div id='traintable-buttons'> </div>
-            <div style="overflow-y: scroll; height:400px;">
-              <table class="u-full-width" id='trains-table'>
-              </table>
-            </div>
-          <div id='all-stations'>
-            <h5> All Stations </h5>
+    <div class='container'>
+      <div class='row' style='margin-top: 5%'>
+        <h1>Hello Caltrain</h1>
+        <h5>Favorite Stations</h5>
+        <div id='favorites'> </div>
+        <div id='other-actives'> </div>
+        <h5> Trains </h5>
+        <div id='traintable-buttons'> </div>
+        <div id='trains'>
+          <div style='overflow-y: scroll; height:400px;'>
+            <table class='u-full-width' id='trains-table'>
+            </table>
           </div>
-        </div>
-      </div>
+        <h5> All Stations </h5>
+        <div id='all-stations'> </div>
       </div>
     </div>
-
   <script type='module' src='./src/index.js'></script>
   </body>
 </html>

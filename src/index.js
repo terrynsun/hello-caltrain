@@ -37,7 +37,7 @@ function toggleButtonColor(b) {
   // b should be the actual dom button element
   const cls = b.getAttribute('class');
   if (cls == 'button-primary') {
-    b.removeAttribute('class');
+    b.setAttribute('class', 'button');
   } else {
     b.setAttribute('class', 'button-primary');
   }
@@ -49,7 +49,7 @@ function setButtonColor(b, active) {
   if (active) {
     b.setAttribute('class', 'button-primary');
   } else {
-    b.removeAttribute('class');
+    b.setAttribute('class', 'button');
   }
 }
 
@@ -62,6 +62,12 @@ function drawFavorites(state, data) {
   let div = document.querySelector('#favorites');
   clearNode(div);
 
+  if (favs.length == 0) {
+    const t = document.createElement('p');
+    t.textContent = 'Click the ★ button next to a station name to add to favorites!';
+    div.appendChild(t);
+  }
+
   for (const f of favs) {
     const b = document.createElement('button');
     if (actives.indexOf(f) > -1) {
@@ -71,7 +77,9 @@ function drawFavorites(state, data) {
     b.addEventListener('click', (e) => { // jshint ignore:line
       toggleButtonColor(b);
       toggleCity(actives, f, stationNames);
+      console.log(actives);
       drawTrainTable(state, data);
+      drawStationList(state, data);
     });
     div.appendChild(b);
   }
@@ -80,18 +88,25 @@ function drawFavorites(state, data) {
   div = document.querySelector('#other-actives');
   clearNode(div);
 
-  for (const s of actives) {
-    if (favs.indexOf(s) == -1) {
-      const b = document.createElement('button');
-      toggleButtonColor(b);
-      b.textContent = s;
-      b.addEventListener('click', (e) => { //jshint ignore:line
-        toggleCity(actives, s, stationNames);
-        drawTrainTable(state, data);
-        drawFavorites(state, data);
-      });
-      div.appendChild(b);
-    }
+  // Find stations which are active but not included in favorites
+  const otherActiveStations = actives.filter(s => favs.indexOf(s) == -1);
+
+  if (otherActiveStations.length > 0) {
+    const t = document.createElement('h5');
+    t.textContent = 'Active Stations';
+    div.appendChild(t);
+  }
+
+  for (const s of otherActiveStations) {
+    const b = document.createElement('button');
+    toggleButtonColor(b);
+    b.textContent = s;
+    b.addEventListener('click', (e) => { // jshint ignore:line
+      toggleCity(actives, s, stationNames);
+      drawTrainTable(state, data);
+      drawFavorites(state, data);
+    });
+    div.appendChild(b);
   }
 
 }
@@ -196,11 +211,15 @@ function drawTrainTableButtons(state, data) {
   });
   div.appendChild(dirButton);
 
+  const scheduleDiv = document.createElement('div');
+
+  div.appendChild(scheduleDiv);
+
   // Weekday, Saturday, Sunday buttons
   for (const text of ['weekday', 'saturday', 'sunday']) {
     const b = document.createElement('button');
     b.textContent = text;
-    div.appendChild(b);
+    scheduleDiv.appendChild(b);
 
     if (state.schedule == text) {
       setButtonColor(b, true);
@@ -291,6 +310,8 @@ function drawStationList(state, data) {
   const stations = data.stationNames;
 
   const div = document.querySelector('#all-stations');
+  clearNode(div);
+
   for (const s in stations) {
     const row = document.createElement('div');
     row.setAttribute('class', 'row');
@@ -299,7 +320,7 @@ function drawStationList(state, data) {
     const bstar = document.createElement('button');
     bstar.textContent = '★';
     if (state.favorites.indexOf(s) > -1) {
-      toggleButtonColor(bstar);
+      setButtonColor(bstar, true);
     }
     bstar.addEventListener('click', (e) => { // jshint ignore:line
       toggleCity(state.favorites, s, stations);
@@ -310,9 +331,7 @@ function drawStationList(state, data) {
 
     const btoggle = document.createElement('button');
     btoggle.textContent = s;
-    if (state.actives.indexOf(s) > -1) {
-      toggleButtonColor(btoggle);
-    }
+    setButtonColor(btoggle, state.actives.indexOf(s) > -1);
     btoggle.addEventListener('click', (e) => { // jshint ignore:line
       toggleCity(state.actives, s, stations);
       toggleButtonColor(btoggle);
