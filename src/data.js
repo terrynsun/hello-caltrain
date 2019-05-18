@@ -1,12 +1,36 @@
 var ROUTES_URL = 'gtfs/routes.txt';
+var TRIPS_URL = 'gtfs/trips.txt';
 var STOPS_URL = 'gtfs/stops.txt';
 var STOP_TIMES_URL = 'gtfs/stop_times.txt';
+var CALENDAR_URL = 'gtfs/calendar.txt';
+
+export class Trip {
+  constructor(id, route, service) {
+    this.id = id;
+
+    // Local, Limited, Bullet, TaSJ, Special
+    this.route = route;
+
+    // { weekday: bool, saturday: bool, sunday: bool }
+    // TODO: handle special days
+    this.service = service || {};
+
+    // [ [ stop name: string, time: string ] ]
+    this.stops = [];
+  }
+
+  addStop(stop, time) {
+    this.stops.push([stop, time]);
+  }
+}
 
 export class Data {
   constructor(routes, stationIds, stationNames, trips) {
     this.routes = routes;
     this.stationIds = stationIds;
     this.stationNames = stationNames;
+
+    // { id: string -> Trip }
     this.trips = trips;
   }
 }
@@ -63,16 +87,43 @@ function parseStops(data) {
   return stationIds, stationNames;
 }
 
-function parseTimes(data) {
+function parseCalendar(data) {
+  //service_id,service_name,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+  var services = {};
+
+  for (const line of data) {
+    var id = line[0];
+    services[id] = {
+      'weekday': line[2] == '1',
+      'saturday': line[7] == '1',
+      'sunday': line[8] == '1',
+    };
+  }
+
+  return services;
+}
+
+function parseTrips(data, services, routes) {
+  // route_id,service_id,trip_id,trip_short_name,trip_headsign,direction_id,block_id,shape_id,bikes_allowed,wheelchair_accessible,trip_type,drt_max_travel_time,drt_avg_travel_time,drt_advance_book_min,drt_pickup_message,drt_drop_off_message,continuous_pickup_message,continuous_drop_off_message
+
+  const trips = {};
+
+  for (const line of data) {
+    const [routeId, serviceId, id] = line;
+
+    trips[id] = new Trip(id, routes[routeId], services[serviceId]);
+  }
+
+  return trips;
+}
+
+function parseStopTimes(data, trips) {
   // trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,timepoint,start_service_area_id,end_service_area_id,start_service_area_radius,end_service_area_radius,continuous_pickup,continuous_drop_off,pickup_area_id,drop_off_area_id,pickup_service_area_radius,drop_off_service_area_radius
 
-  var trips = {};
-
-  for (var i = 0; i < data.length; i++) {
-    var line = data[i];
-    var tripId = line[0];
-    if (trips[tripId] === undefined) {
-      trips[tripId] = [];
+  for (const line of data) {
+    var id = line[0];
+    if (trips[id] === undefined) {
+      console.log('Error parsing stop_times!');
     }
 
     // Time is given as "hh:mm:ss", trim the ":ss"
@@ -81,7 +132,7 @@ function parseTimes(data) {
     departure = departure.substring(0, departure.length - 3);
     var stop = line[3];
 
-    trips[tripId].push([stop, departure]);
+    trips[id].addStop(stop, departure);
   }
 
   return trips;
@@ -106,12 +157,30 @@ export async function loadData() {
       });
   });
 
-  var trips = await fetch(STOP_TIMES_URL)
+  var services = await fetch(CALENDAR_URL)
     .then(response => {
       return response.text().then(text => {
-        console.log('Fetched times.csv');
+        console.log('Fetched calendar.csv');
         var data = parseCSV(text);
-        return parseTimes(data);
+        return parseCalendar(data);
+      });
+  });
+
+  var trips = await fetch(TRIPS_URL)
+    .then(response => {
+      return response.text().then(text => {
+        console.log('Fetched trips.csv');
+        var data = parseCSV(text);
+        return parseTrips(data, services, routes);
+      });
+  });
+
+  var _ = await fetch(STOP_TIMES_URL)
+    .then(response => {
+      return response.text().then(text => {
+        console.log('Fetched stop_times.csv');
+        var data = parseCSV(text);
+        parseStopTimes(data, trips, services);
       });
   });
 

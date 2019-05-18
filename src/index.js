@@ -9,6 +9,8 @@ class State {
 
     // 1 = northbound, 0 = southbound
     this.northbound = 1;
+
+    this.schedule = 'weekday';
   }
 }
 
@@ -38,6 +40,16 @@ function toggleButtonColor(b) {
     b.removeAttribute('class');
   } else {
     b.setAttribute('class', 'button-primary');
+  }
+}
+
+function setButtonColor(b, active) {
+  // b should be the actual dom button element
+  var cls = b.getAttribute('class');
+  if (active) {
+    b.setAttribute('class', 'button-primary');
+  } else {
+    b.removeAttribute('class');
   }
 }
 
@@ -90,23 +102,26 @@ function drawFavorites(state, data) {
 // stationIds: stations to include
 // trips: all trips
 // northbound: 1 = northbound, 0 = southbound
-function getActiveTrips(stationIds, trips, northbound) {
+function getActiveTrips(stationIds, trips, state) {
   var activeTrips = [];
 
   // Get the trips which stop at two or more of the active train stations
-  for (const id in trips) {
+  for (const [id, t] of Object.entries(trips)) {
     // Ignore shuttles and _holiday trains for now.
     if (isNaN(Number(id))) {
       continue;
     // Ignore trains going the other way
-    } else if (Number(id) % 2 !== northbound) {
+    } else if (Number(id) % 2 !== state.northbound) {
+      continue;
+    // Ignore trains not scheduled on the current day
+    } else if (!t.service[state.schedule]) {
       continue;
     } else {
       var numActiveStops = 0;
 
       var stops = [];
 
-      for (const stop of trips[id]) {
+      for (const stop of t.stops) {
         var station = stop[0];
         var time = stop[1];
 
@@ -128,7 +143,7 @@ function getActiveTrips(stationIds, trips, northbound) {
       );
 
       // For northbound trips, reverse.
-      if (northbound === 1) {
+      if (state.northbound === 1) {
         stops.reverse();
         tripLength = tripLength * -1;
       }
@@ -181,11 +196,25 @@ function drawTrainTableButtons(state, data) {
   });
   div.appendChild(dirButton);
 
-  // Weekday, Saturday, Sunday buttons can toggle but don't do anything
-  for (const text of ['Weekday', 'Saturday', 'Sunday']) {
+  // Weekday, Saturday, Sunday buttons
+  for (const text of ['weekday', 'saturday', 'sunday']) {
     const b = document.createElement('button');
     b.textContent = text;
     div.appendChild(b);
+
+    if (state.schedule == text) {
+      setButtonColor(b, true);
+    }
+
+    b.addEventListener('click', (e) => { // jshint ignore:line
+      state.schedule = text;
+      for (const bother of div.childNodes) {
+        setButtonColor(bother, false);
+      }
+      setButtonColor(b, true);
+
+      drawTrainTable(state, data);
+    });
   }
 }
 
@@ -243,7 +272,7 @@ function drawTrainTable(state, data) {
   var tbody = document.createElement('tbody');
   table.appendChild(tbody);
 
-  const activeTrips = getActiveTrips(stationIds, trips, northbound);
+  const activeTrips = getActiveTrips(stationIds, trips, state);
 
   for (const trip of activeTrips) {
     var row = document.createElement('tr');

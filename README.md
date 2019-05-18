@@ -17,7 +17,7 @@ Caltrain GTFS (General Transit Feed Specification) is downloaded from the
   - [x] Add/remove trains from current timetable
   - [x] Add/remove trains from favorites
   - [x] North vs. southbound toggle
-- [ ] Toggle weekday/weekend trains (calendar.txt, calendar_dates.txt)
+- [x] Toggle weekday/weekend trains (calendar.txt, calendar_dates.txt)
 - [ ] Filter for only limited/bullet trains?
 - [ ] Figure out holiday trains
 - [ ] Grey out passed trains; scroll to current time of day
