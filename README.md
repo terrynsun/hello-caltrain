@@ -11,8 +11,8 @@ Caltrain GTFS (General Transit Feed Specification) is downloaded from the
 - [x] Generate buttons for station list at bottom of page
 * UI
   - [ ] Consider [Barebones](Barebones) intead of Skeleton
-  - [ ] Why isn't there any padding around buttons?
-  - [ ] Change color scheme so "primary" = "activated" is not blue
+  - [x] Why isn't there any padding around buttons?
+  - [x] Change color scheme so "primary" = "activated" is not blue
 - Hook up buttons so they do anything
   - [x] Add/remove trains from current timetable
   - [x] Add/remove trains from favorites
