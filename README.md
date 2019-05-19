@@ -22,7 +22,7 @@ Caltrain GTFS (General Transit Feed Specification) is downloaded from the
 - [ ] Figure out holiday trains
 - [ ] Grey out passed trains; scroll to current time of day
 - [ ] Add favicon
-- [ ] Separate trains at bottom by zone
+- [x] Separate trains at bottom by zone
 
 # Future features
 

@@ -24,16 +24,25 @@ export class Trip {
   }
 }
 
+export class Station {
+  constructor(id, name, zone) {
+    this.ids = [id];
+    this.name = name;
+    this.zone = zone;
+  }
+
+  addId(id) {
+    this.ids.push(id);
+  }
+}
+
 export class Data {
-  constructor(routes, stationIds, stationNames, trips) {
+  constructor(routes, stations, trips) {
     // "Bullet", "Local", "Limited", "TaSJ-Shuttle", "Special"
     this.routes = routes;
 
-    // { id -> name }
-    this.stationIds = stationIds;
-
     // { name -> [northbound id, southbound id] }
-    this.stationNames = stationNames;
+    this.stations = stations;
 
     // { id: string -> Trip }
     this.trips = trips;
@@ -75,23 +84,31 @@ function parseRoutes(data) {
 
 function parseStops(data) {
   // stop_id,stop_code,platform_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,position,direction,wheelchair_boarding
-  const stationIds = {};
-  const stationNames = {};
+  let zoneBase = Number(data[0][7]);
+  let actualZone = 1;
+
+  const stations = {};
 
   for (const line of data) {
     const id = line[0];
     // trim trailing '... Caltrain'
     const name = trimSuffix(line[3], ' Caltrain');
 
-    stationIds[id] = name;
+    if (stations[name] == undefined) {
+      // Increment zone when the zone id changes, since the csv's zone_id field doesn't map to zones we actually use.
+      const inputZone = Number(line[7]);
+      if (inputZone != zoneBase) {
+        actualZone += 1;
+        zoneBase = inputZone;
+      }
 
-    if (stationNames[name] == undefined) {
-      stationNames[name] = [];
+      stations[name] = new Station(id, name, actualZone);
+    } else {
+      stations[name].addId(id);
     }
-    stationNames[name].push(id);
   }
 
-  return stationIds, stationNames;
+  return stations;
 }
 
 function parseCalendar(data) {
@@ -154,7 +171,7 @@ export async function loadData() {
       });
   });
 
-  let stationIds, stationNames = await fetch(STOPS_URL)
+  let stations = await fetch(STOPS_URL)
     .then(response => {
       return response.text().then(text => {
         console.log('Fetched stops.csv');
@@ -190,7 +207,7 @@ export async function loadData() {
       });
   });
 
-  const data = new Data(routes, stationIds, stationNames, trips);
+  const data = new Data(routes, stations, trips);
 
   return data;
 }

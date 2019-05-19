@@ -14,14 +14,14 @@ class State {
   }
 }
 
-function toggleCity(list, station, stationNames) {
+function toggleCity(list, station, stations) {
   const idx = list.indexOf(station);
   if (idx > -1) {
     list.splice(idx, 1);
   } else {
     list.push(station);
     list.sort((a, b) => {
-      return stationNames[a][0] - stationNames[b][0];
+      return stations[a].ids[0] - stations[b].ids[0];
     });
   }
 }
@@ -56,8 +56,7 @@ function setButtonColor(b, active) {
 function drawFavorites(state, data) {
   const favs = state.favorites;
   const actives = state.actives;
-
-  const stationNames = data.stationNames;
+  const stations = data.stations;
 
   let div = document.querySelector('#favorites');
   clearNode(div);
@@ -76,8 +75,7 @@ function drawFavorites(state, data) {
     b.textContent = f;
     b.addEventListener('click', (e) => { // jshint ignore:line
       toggleButtonColor(b);
-      toggleCity(actives, f, stationNames);
-      console.log(actives);
+      toggleCity(actives, f, stations);
       drawTrainTable(state, data);
       drawStationList(state, data);
     });
@@ -102,7 +100,7 @@ function drawFavorites(state, data) {
     toggleButtonColor(b);
     b.textContent = s;
     b.addEventListener('click', (e) => { // jshint ignore:line
-      toggleCity(actives, s, stationNames);
+      toggleCity(actives, s, stations);
       drawTrainTable(state, data);
       drawFavorites(state, data);
     });
@@ -241,7 +239,7 @@ function drawTrainTable(state, data) {
   const active = state.actives;
   const northbound = state.northbound;
   const trips = data.trips;
-  const stationNames = data.stationNames;
+  const stations = data.stations;
 
   const table = document.querySelector('#trains-table');
 
@@ -251,7 +249,7 @@ function drawTrainTable(state, data) {
   const stationIds = [];
   // Convert station names into IDs
   for (const s of active) {
-    const ids = stationNames[s];
+    const ids = stations[s].ids;
     if (northbound === 1) {
       stationIds.push(ids[0]);
     } else {
@@ -307,33 +305,46 @@ function drawTrainTable(state, data) {
 }
 
 function drawStationList(state, data) {
-  const stations = data.stationNames;
+  function incrZone(n, d) {
+    let t = document.createElement('h6');
+    t.textContent = `Zone ${n}`;
+    d.appendChild(t);
+  }
+
+  const stations = data.stations;
+  let pageZone = 0;
 
   const div = document.querySelector('#all-stations');
   clearNode(div);
 
-  for (const s in stations) {
+  for (const [name, station] of Object.entries(stations)) {
+    const zone = station.zone;
+    if (zone != pageZone) {
+      incrZone(zone, div);
+      pageZone = zone;
+    }
+
     const row = document.createElement('div');
     row.setAttribute('class', 'row');
     div.appendChild(row);
 
+    // Button to toggle favorites
     const bstar = document.createElement('button');
     bstar.textContent = '★';
-    if (state.favorites.indexOf(s) > -1) {
-      setButtonColor(bstar, true);
-    }
+    setButtonColor(bstar, state.favorites.indexOf(name) > -1);
     bstar.addEventListener('click', (e) => { // jshint ignore:line
-      toggleCity(state.favorites, s, stations);
+      toggleCity(state.favorites, name, stations);
       toggleButtonColor(bstar);
       drawFavorites(state, data);
     });
     row.appendChild(bstar);
 
+    // Button to toggle whether to display station
     const btoggle = document.createElement('button');
-    btoggle.textContent = s;
-    setButtonColor(btoggle, state.actives.indexOf(s) > -1);
+    btoggle.textContent = name;
+    setButtonColor(btoggle, state.actives.indexOf(name) > -1);
     btoggle.addEventListener('click', (e) => { // jshint ignore:line
-      toggleCity(state.actives, s, stations);
+      toggleCity(state.actives, name, stations);
       toggleButtonColor(btoggle);
       drawFavorites(state, data);
       drawTrainTable(state, data);
