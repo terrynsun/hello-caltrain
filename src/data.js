@@ -44,6 +44,10 @@ function trimN(s, n) {
   return s.substring(0, s.length - n);
 }
 
+function trimSuffix(s, suffix) {
+  return s.substring(0, s.indexOf(suffix));
+}
+
 function parseCSV(text) {
   const lines = text.split('\n');
 
@@ -77,7 +81,7 @@ function parseStops(data) {
   for (const line of data) {
     const id = line[0];
     // trim trailing '... Caltrain'
-    const name = trimN(line[3], ' Caltrain'.length);
+    const name = trimSuffix(line[3], ' Caltrain');
 
     stationIds[id] = name;
 
