@@ -29,6 +29,7 @@ export class Station {
     this.ids = [id];
     this.name = name;
     this.zone = zone;
+    this.used = false;
   }
 
   addId(id) {
@@ -41,10 +42,10 @@ export class Data {
     // "Bullet", "Local", "Limited", "TaSJ-Shuttle", "Special"
     this.routes = routes;
 
-    // { name -> [northbound id, southbound id] }
+    // { name -> ( [northbound id, southbound id], zone ) }
     this.stations = stations;
 
-    // { id: string -> Trip }
+    // { id: string -> Trip { id, route name, service days, stops } }
     this.trips = trips;
   }
 }
@@ -82,8 +83,15 @@ function parseRoutes(data) {
   return routes;
 }
 
-function parseStops(data) {
+function parseStops(data, trips) {
   // stop_id,stop_code,platform_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,position,direction,wheelchair_boarding
+  const visited = new Set();
+  for (const t of Object.values(trips)) {
+    for (const station of t.stops.map(x => x[0])) {
+      visited.add(station);
+    }
+  }
+
   let zoneBase = Number(data[0][7]);
   let actualZone = 1;
 
@@ -91,6 +99,12 @@ function parseStops(data) {
 
   for (const line of data) {
     const id = line[0];
+
+    // Ignore stations that have no trains
+    if (!visited.has(id)) {
+      continue;
+    }
+
     // trim trailing '... Caltrain'
     const name = trimSuffix(line[3], ' Caltrain');
 
@@ -146,6 +160,10 @@ function parseStopTimes(data, trips) {
 
   for (const line of data) {
     const id = line[0];
+    if (id.indexOf('shuttle') > -1) {
+      continue;
+    }
+
     if (trips[id] === undefined) {
       console.log('Error parsing stop_times!');
     }
@@ -168,15 +186,6 @@ export async function loadData() {
         console.log('Fetched routes.csv');
         let data = parseCSV(text);
         return parseRoutes(data);
-      });
-  });
-
-  let stations = await fetch(STOPS_URL)
-    .then(response => {
-      return response.text().then(text => {
-        console.log('Fetched stops.csv');
-        let data = parseCSV(text);
-        return parseStops(data);
       });
   });
 
@@ -207,7 +216,14 @@ export async function loadData() {
       });
   });
 
-  const data = new Data(routes, stations, trips);
+  let stations = await fetch(STOPS_URL)
+    .then(response => {
+      return response.text().then(text => {
+        console.log('Fetched stops.csv');
+        let data = parseCSV(text);
+        return parseStops(data, trips);
+      });
+  });
 
-  return data;
+  return new Data(routes, stations, trips);
 }
