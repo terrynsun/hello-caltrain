@@ -378,4 +378,6 @@ if ('serviceWorker' in navigator) {
   });
 
   main();
+} else {
+  console.log('serviceWorker not available in navigator - are you using https?');
 }
