@@ -235,29 +235,7 @@ function drawTrainTableButtons(state, data) {
   }
 }
 
-function drawTrainTable(state, data) {
-  const active = state.actives;
-  const northbound = state.northbound;
-  const trips = data.trips;
-  const stations = data.stations;
-
-  const table = document.querySelector('#trains-table');
-
-  // Clear any existing data.
-  clearNode(table);
-
-  const stationIds = [];
-  // Convert station names into IDs
-  for (const s of active) {
-    const ids = stations[s].ids;
-    if (northbound === 1) {
-      stationIds.push(ids[0]);
-    } else {
-      stationIds.push(ids[1]);
-    }
-  }
-
-  // Draw header
+function drawTrainTableHeader(northbound, active) {
   const thead = document.createElement('thead');
   const tr = document.createElement('tr');
   thead.appendChild(tr);
@@ -283,6 +261,33 @@ function drawTrainTable(state, data) {
   th.textContent = 'Length';
   tr.appendChild(th);
 
+  return thead;
+}
+
+function drawTrainTable(state, data) {
+  const active = state.actives;
+  const northbound = state.northbound;
+  const trips = data.trips;
+  const stations = data.stations;
+
+  const table = document.querySelector('#trains-table');
+
+  // Clear any existing data.
+  clearNode(table);
+
+  const stationIds = [];
+  // Convert station names into IDs
+  for (const s of active) {
+    const ids = stations[s].ids;
+    if (northbound === 1) {
+      stationIds.push(ids[0]);
+    } else {
+      stationIds.push(ids[1]);
+    }
+  }
+
+  // Draw header: "Train", [Station,], "Length"
+  const thead = drawTrainTableHeader(northbound, active);
   table.appendChild(thead);
 
   // Draw body
