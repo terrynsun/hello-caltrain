@@ -20,8 +20,8 @@ Caltrain GTFS (General Transit Feed Specification) is downloaded from the
 - [x] Toggle weekday/weekend trains (calendar.txt, calendar_dates.txt)
 - [ ] Filter for only limited/bullet trains?
 - [ ] Figure out holiday trains
-- [ ] Grey out passed trains
-- [ ] Scroll to current time of day
+- [x] Grey out passed trains
+- [x] Scroll to current time of day
 - [x] Add fixed header for train table
 - [ ] Add favicon
 - [ ] Add help text

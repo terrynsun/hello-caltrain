@@ -8,3 +8,7 @@ thead th {
     overflow-y: scroll;
     height: 400px;
 }
+
+.greyed {
+    color: #777;
+}

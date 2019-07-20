@@ -290,14 +290,21 @@ function drawTrainTable(state, data) {
   const thead = drawTrainTableHeader(northbound, active);
   table.appendChild(thead);
 
+  const date = new Date();
+  const now = date.getHours() + ':' + date.getMinutes();
+
   // Draw body
   const tbody = document.createElement('tbody');
   table.appendChild(tbody);
 
   const activeTrips = getActiveTrips(stationIds, trips, state);
 
+  let scrollHeight = null;
+  let rowHeight = 0;
   for (const trip of activeTrips) {
+    // trip is a list: [ trainid, [stop times,], length ]
     const row = document.createElement('tr');
+    tbody.appendChild(row);
 
     for (const v of trip) {
       const td = document.createElement('td');
@@ -305,8 +312,18 @@ function drawTrainTable(state, data) {
       row.appendChild(td);
     }
 
-    tbody.appendChild(row);
+    // If the first train has passed, grey out the row.
+    // TODO: only when viewing today's trains
+    const firstStop = trip[1];
+    if (Time.cmpTimes(firstStop, now) < 0) {
+      row.className = 'greyed';
+    } else if (scrollHeight === null) {
+      scrollHeight = row.offsetTop;
+      rowHeight = row.offsetHeight;
+    }
   }
+  // Scroll the train timetable to the next train, minus 2
+  document.querySelector('#trains').scrollTop = scrollHeight - (rowHeight * 3);
 }
 
 function drawStationList(state, data) {
